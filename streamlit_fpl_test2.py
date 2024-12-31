@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 from decimal import Decimal
 import itertools as it
-import plotly.express as px
 import streamlit as st
 
 ##Request fixtures from FPL API
@@ -266,8 +265,9 @@ FixturesElementsAll2AttFilteredslim.sort_values(by='event', ascending=True)
 
 FixturesElementsAll2AttFilteredslim=FixturesElementsAll2AttFilteredslim.drop_duplicates(subset=['event','web_name'])
 
-figAttAtt = px.bar(data_frame=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
+#figAttAtt = px.bar(data_frame=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
 
+st.bar_chart(data=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False)
 
 FixturesElementsAll2Def=FixturesElementsAll2[FixturesElementsAll2['element_type']<3]
 
@@ -287,7 +287,7 @@ FixturesElementsAll2DefFilteredslim.sort_values(by='event', ascending=True)
 
 FixturesElementsAll2DefFilteredslim=FixturesElementsAll2DefFilteredslim.drop_duplicates(subset=['event','web_name'])
 
-figDefDef = px.bar(data_frame=FixturesElementsAll2DefFilteredslim, x="event", y="DefenceOpp_pergame", barmode='group', color='web_name')
+#figDefDef = px.bar(data_frame=FixturesElementsAll2DefFilteredslim, x="event", y="DefenceOpp_pergame", barmode='group', color='web_name')
 
 
 FixturesElementsAll2Def1=FixturesElementsAll2[FixturesElementsAll2['element_type']<3]
@@ -308,18 +308,18 @@ FixturesElementsAll2Def1Filteredslim.sort_values(by='event', ascending=True)
 
 FixturesElementsAll2Def1Filteredslim=FixturesElementsAll2Def1Filteredslim.drop_duplicates(subset=['event','web_name'])
 
-figDefAtt = px.bar(data_frame=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
+#figDefAtt = px.bar(data_frame=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
 
 
 st.write("figDefAtt")
 
-st.plotly_chart(figDefAtt, use_container_width=True)
+#st.plotly_chart(figDefAtt, use_container_width=True)
 
 st.write("figDefDef")
 
-st.plotly_chart(figDefDef, use_container_width=True)
+##st.plotly_chart(figDefDef, use_container_width=True)
 
 
 st.write("figAttAtt")
 
-st.plotly_chart(figAttAtt, use_container_width=True)
+#st.plotly_chart(figAttAtt, use_container_width=True)
