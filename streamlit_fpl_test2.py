@@ -7,7 +7,6 @@ import numpy as np
 from decimal import Decimal
 import itertools as it
 import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
 
 ##Request fixtures from FPL API
