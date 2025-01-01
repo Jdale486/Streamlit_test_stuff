@@ -267,6 +267,8 @@ FixturesElementsAll2AttFilteredslim=FixturesElementsAll2AttFilteredslim.drop_dup
 
 #figAttAtt = px.bar(data_frame=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
 
+st.write("Attackers Rating")
+
 st.bar_chart(data=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
 
 FixturesElementsAll2Def=FixturesElementsAll2[FixturesElementsAll2['element_type']<3]
@@ -288,6 +290,8 @@ FixturesElementsAll2DefFilteredslim.sort_values(by='event', ascending=True)
 FixturesElementsAll2DefFilteredslim=FixturesElementsAll2DefFilteredslim.drop_duplicates(subset=['event','web_name'])
 
 #figDefDef = px.bar(data_frame=FixturesElementsAll2DefFilteredslim, x="event", y="DefenceOpp_pergame", barmode='group', color='web_name')
+
+st.write("Defenders Defensive Rating")
 
 st.bar_chart(data=FixturesElementsAll2DefFilteredslim, x="event", y="DefenceOpp_pergame",color="web_name", horizontal=False, stack=False)
 
@@ -312,10 +316,12 @@ FixturesElementsAll2Def1Filteredslim=FixturesElementsAll2Def1Filteredslim.drop_d
 
 #figDefAtt = px.bar(data_frame=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
 
+st.write("Defenders Attacking Rating")
+
 st.bar_chart(data=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
 
 
-st.write("figDefAtt")
+
 
 #st.plotly_chart(figDefAtt, use_container_width=True)
 
