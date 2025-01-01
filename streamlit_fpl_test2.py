@@ -267,7 +267,7 @@ FixturesElementsAll2AttFilteredslim=FixturesElementsAll2AttFilteredslim.drop_dup
 
 #figAttAtt = px.bar(data_frame=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
 
-st.write("Attackers Rating")
+st.write("Attackers Rating All")
 
 st.bar_chart(data=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
 
@@ -291,7 +291,7 @@ FixturesElementsAll2DefFilteredslim=FixturesElementsAll2DefFilteredslim.drop_dup
 
 #figDefDef = px.bar(data_frame=FixturesElementsAll2DefFilteredslim, x="event", y="DefenceOpp_pergame", barmode='group', color='web_name')
 
-st.write("Defenders Defensive Rating")
+st.write("Defenders Defensive Rating All - Lower is Better")
 
 st.bar_chart(data=FixturesElementsAll2DefFilteredslim, x="event", y="DefenceOpp_pergame",color="web_name", horizontal=False, stack=False)
 
@@ -316,20 +316,70 @@ FixturesElementsAll2Def1Filteredslim=FixturesElementsAll2Def1Filteredslim.drop_d
 
 #figDefAtt = px.bar(data_frame=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
 
-st.write("Defenders Attacking Rating")
+st.write("Defenders Attacking Rating All")
 
 st.bar_chart(data=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
 
 
+###Current Team Stuff 
 
+url = f"https://fantasy.premierleague.com/api/entry/{TeamID}/event/{PrevWeek}/picks/"
+response = requests.get(url)
+json_data = response.json()
+
+TeamSelection = json_data['picks']
+
+TeamSelection = pd.json_normalize(TeamSelection)
+
+TeamSelection.head()
 
 #st.plotly_chart(figDefAtt, use_container_width=True)
 
-st.write("figDefDef")
+# Calculate total AttackOpp_pergame for each player
+FixturesElementsAll3 = FixturesElementsAll2[FixturesElementsAll2['event']<UpcomingWeek+4]
 
-##st.plotly_chart(figDefDef, use_container_width=True)
+FixturesElementsAll3 = pd.merge(FixturesElementsAll3, TeamSelection,left_on='playerid', right_on='element', how='outer')
+
+FixturesElementsAll3['IsInCurrentTeam'] = np.where(
+    FixturesElementsAll3['is_captain'].notnull(),
+    'Y',
+    'N'
+)
+
+FixturesElementsAll3FilteredAtt=FixturesElementsAll3[FixturesElementsAll3['IsInCurrentTeam']=='Y']
+
+FixturesElementsAll3FilteredAtt=FixturesElementsAll3FilteredAtt[FixturesElementsAll3FilteredAtt['element_type_x']>2]
+
+FixturesElementsAll3FilteredAttslim = FixturesElementsAll3FilteredAtt[['web_name','event','AttackOpp_pergame']]
+#FixturesElementsAll3Filteredslim['event'].astype(int)
+FixturesElementsAll3FilteredAttslim['AttackOpp_pergame'].astype(float)
+FixturesElementsAll3FilteredAttslim.sort_values(by='event', ascending=True)
+
+FixturesElementsAll3FilteredAttslim=FixturesElementsAll3FilteredAttslim.drop_duplicates(subset=['event','web_name'])
 
 
-st.write("figAttAtt")
+st.bar_chart(data=FixturesElementsAll3FilteredAttslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
 
-#st.plotly_chart(figAttAtt, use_container_width=True)
+##Current Team Defence
+
+FixturesElementsAll3FilteredDef=FixturesElementsAll3[FixturesElementsAll3['IsInCurrentTeam']=='Y']
+
+FixturesElementsAll3FilteredDef=FixturesElementsAll3FilteredDef[FixturesElementsAll3FilteredDef['element_type_x']<3]
+
+FixturesElementsAll3FilteredDefslim = FixturesElementsAll3FilteredDef[['web_name','event','AttackOpp_pergame','DefenceOpp_pergame']]
+#FixturesElementsAll3Filteredslim['event'].astype(int)
+FixturesElementsAll3FilteredDefslim['DefenceOpp_pergame'].astype(float)
+FixturesElementsAll3FilteredDefslim['AttackOpp_pergame'].astype(float)
+FixturesElementsAll3FilteredDefslim.sort_values(by='event', ascending=True)
+
+FixturesElementsAll3FilteredDefslim=FixturesElementsAll3FilteredDefslim.drop_duplicates(subset=['event','web_name'])
+
+st.write("Current Team Defence Defensive Rating - Lower is Better")
+
+st.bar_chart(data=FixturesElementsAll3FilteredDefslim, x="event", y="DefenceOpp_pergame",color="web_name", horizontal=False, stack=False)
+
+st.write("Current Team Defence Attacking Rating")
+
+st.bar_chart(data=FixturesElementsAll3FilteredDefslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
+
+
