@@ -8,6 +8,9 @@ from decimal import Decimal
 import itertools as it
 import streamlit as st
 
+number = st.number_input("Insert a number")
+st.write("The current number is ", number)
+
 ##Request fixtures from FPL API
 
 url = f"https://fantasy.premierleague.com/api/fixtures/"
@@ -30,7 +33,9 @@ PrevWeek = UpcomingWeek-1
 
 NoWeeks = 4
 
-TeamID = 1769272
+TeamID = number
+
+##TeamID = 1769272
 
 print(UpcomingWeek)
 print(PrevWeek)
@@ -257,7 +262,7 @@ FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['At
 top_players = FixturesElementsAll2_totalsAtt.sort_values(by='AttackOpp_pergame', ascending=False).head(10)
 
 # Filter original DataFrame to include only top 20 players
-FixturesElementsAll2AttFiltered = FixturesElementsAll2[FixturesElementsAll2['web_name'].isin(top_players['web_name'])]
+FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll2Att['web_name'].isin(top_players['web_name'])]
 
 FixturesElementsAll2AttFilteredslim = FixturesElementsAll2AttFiltered[['web_name','event','AttackOpp_pergame']]
 FixturesElementsAll2AttFilteredslim['AttackOpp_pergame'].astype(float)
@@ -281,7 +286,7 @@ FixturesElementsAll2_totalsDef = FixturesElementsAll2Def.groupby('web_name')['De
 top_players = FixturesElementsAll2_totalsDef.sort_values(by='DefenceOpp_pergame', ascending=True).head(10)
 
 # Filter original DataFrame to include only top 20 players
-FixturesElementsAll2DefFiltered = FixturesElementsAll2[FixturesElementsAll2['web_name'].isin(top_players['web_name'])]
+FixturesElementsAll2DefFiltered = FixturesElementsAll2Def[FixturesElementsAll2Def['web_name'].isin(top_players['web_name'])]
 
 FixturesElementsAll2DefFilteredslim = FixturesElementsAll2DefFiltered[['web_name','event','DefenceOpp_pergame']]
 FixturesElementsAll2DefFilteredslim['DefenceOpp_pergame'].astype(float)
@@ -306,7 +311,7 @@ FixturesElementsAll2_totalsDef1 = FixturesElementsAll2Def1.groupby('web_name')['
 top_players = FixturesElementsAll2_totalsDef1.sort_values(by='AttackOpp_pergame', ascending=False).head(10)
 
 # Filter original DataFrame to include only top 20 players
-FixturesElementsAll2Def1Filtered = FixturesElementsAll2[FixturesElementsAll2['web_name'].isin(top_players['web_name'])]
+FixturesElementsAll2Def1Filtered = FixturesElementsAll2Def1[FixturesElementsAll2Def1['web_name'].isin(top_players['web_name'])]
 
 FixturesElementsAll2Def1Filteredslim = FixturesElementsAll2Def1Filtered[['web_name','event','AttackOpp_pergame']]
 FixturesElementsAll2Def1Filteredslim['AttackOpp_pergame'].astype(float)
