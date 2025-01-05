@@ -8,7 +8,7 @@ from decimal import Decimal
 import itertools as it
 import streamlit as st
 
-number = st.number_input("Insert a number")
+number = st.number_input("Insert a number", step=1)
 st.write("The current number is ", number)
 
 ##Request fixtures from FPL API
@@ -328,8 +328,9 @@ st.bar_chart(data=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_
 
 ###Current Team Stuff 
 
-url = f"https://fantasy.premierleague.com/api/entry/{TeamID}/event/{PrevWeek}/picks/"
-response = requests.get(url)
+CSurl = f"https://fantasy.premierleague.com/api/entry/{TeamID}/event/{PrevWeek}/picks/"
+CSurl
+response = requests.get(CSurl)
 json_data = response.json()
 
 TeamSelection = json_data['picks']
