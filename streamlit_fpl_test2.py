@@ -33,7 +33,7 @@ PrevWeek = UpcomingWeek-1
 
 NoWeeks = 4
 
-TeamID = number.astype(int)
+TeamID = number
 
 #TeamID = 1769272
 
