@@ -8,8 +8,8 @@ from decimal import Decimal
 import itertools as it
 import streamlit as st
 
-number = st.number_input("Insert a number", step=1)
-st.write("The current number is ", number)
+number = st.number_input("Enter Team ID", step=1)
+st.write("The current Team ID is ", number)
 
 ##Request fixtures from FPL API
 
