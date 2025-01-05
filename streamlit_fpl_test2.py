@@ -33,9 +33,9 @@ PrevWeek = UpcomingWeek-1
 
 NoWeeks = 4
 
-TeamID = number
+TeamID = number.astype(int)
 
-##TeamID = 1769272
+#TeamID = 1769272
 
 print(UpcomingWeek)
 print(PrevWeek)
