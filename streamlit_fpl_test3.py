@@ -367,7 +367,7 @@ fig.update_layout(
 
 # Display the figure
 #fig.show()
-st.write("Midfielders")
+st.write("Midfielders  xGI")
 
 
 st.plotly_chart(fig, use_container_width=True)
@@ -454,7 +454,180 @@ fig1.update_layout(
 
 # Display the figure
 #fig.show()
-st.write("Attackers")
+st.write("Attackers xGI")
 
 
 st.plotly_chart(fig1, use_container_width=True)
+
+
+
+############# Defenders
+
+
+
+##### Returns Output 1 FixturesElementsAll
+FixturesElementsAll1 = pd.merge(FixturesConcat, Elements_Dim2Grouped2,left_on='OppTeam2', right_on='OppTeam', how='outer')
+
+FixturesElementsAll2 = pd.merge(grouped_dfLast4Weeks, FixturesElementsAll1,left_on='team', right_on='TeamID', how='outer')
+
+FixturesElementsAll3 =  pd.merge(TeamSelection1, FixturesElementsAll2,left_on='element', right_on='playerid', how='outer')
+
+FixturesElementsAll3['InCurrentTeam']= np.where(
+    FixturesElementsAll3['element'].notnull(),
+    1,
+    0
+)
+
+FixturesElementsAll3['AttackOpp_pergame'] = FixturesElementsAll3['XGC_Weighted']*FixturesElementsAll3['expected_goal_involvements.gw']
+
+FixturesElementsAll3['DefenceOpp_pergame'] = FixturesElementsAll3['XGI_Weighted']*FixturesElementsAll3['expected_goals_conceded.gw']
+
+FixturesElementsAll3.to_csv('FixturesElementsAll.csv')
+
+FixturesElementsAll3['xGIAvg_Player'] = FixturesElementsAll3['expected_goal_involvements.gw'].apply(lambda x: format(x, ".2f")).astype(str) + '-' + FixturesElementsAll3['web_name']
+
+
+FixturesElementsAll2Att=FixturesElementsAll3[FixturesElementsAll3['element_type']==2]
+
+# Calculate total AttackOpp_pergame for each player
+FixturesElementsAll2Att = FixturesElementsAll2Att[FixturesElementsAll2Att['event']<UpcomingWeek+6]
+FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['AttackOpp_pergame'].sum().reset_index()
+
+# Sort players by total AttackOpp_pergame and select top 20
+top_players = FixturesElementsAll2_totalsAtt.sort_values(by='AttackOpp_pergame', ascending=False).head(NoPlayersShownInt)
+
+# Filter original DataFrame to include only top 20 players
+FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll3['web_name'].isin(top_players['web_name'])]
+
+
+# Pivot the DataFrame using pivot_table with an aggregation function
+heatmap_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='XGC_Weighted',
+    aggfunc='mean'
+)
+text_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='Teams.name',
+    aggfunc=lambda x: ' | '.join(x.astype(str))
+)
+current_team_data = FixturesElementsAll2AttFiltered.set_index('xGIAvg_Player')['InCurrentTeam'].to_dict()
+
+# Prepare custom tick labels for y-axis
+yaxis_tickvals = list(heatmap_data.index)
+yaxis_ticktext = [f'<b style="color:blue;">{player}</b>' if current_team_data[player] > 0 else player for player in yaxis_tickvals]
+
+# Create the heatmap
+fig2 = go.Figure(data=go.Heatmap(
+    z=heatmap_data.values,
+    x=heatmap_data.columns,
+    y=yaxis_tickvals,
+    text=text_data.values,
+    texttemplate="%{text}",
+    textfont={"size":8},
+    colorscale='reds'
+))
+
+# Update layout to leave more space for the y-axis
+fig2.update_layout(
+    margin=dict(l=200, r=50, t=50, b=50),  # Increase left margin to make room for y-axis labels
+    yaxis=dict(
+        tickvals=yaxis_tickvals,
+        ticktext=yaxis_ticktext
+    )
+)
+
+# Display the figure
+#fig.show()
+st.write("Defenders xGI")
+
+
+st.plotly_chart(fig2, use_container_width=True)
+
+
+############# Defenders xGC
+
+
+
+##### Returns Output 1 FixturesElementsAll
+FixturesElementsAll1 = pd.merge(FixturesConcat, Elements_Dim2Grouped2,left_on='OppTeam2', right_on='OppTeam', how='outer')
+
+FixturesElementsAll2 = pd.merge(grouped_dfLast4Weeks, FixturesElementsAll1,left_on='team', right_on='TeamID', how='outer')
+
+FixturesElementsAll3 =  pd.merge(TeamSelection1, FixturesElementsAll2,left_on='element', right_on='playerid', how='outer')
+
+FixturesElementsAll3['InCurrentTeam']= np.where(
+    FixturesElementsAll3['element'].notnull(),
+    1,
+    0
+)
+
+FixturesElementsAll3['AttackOpp_pergame'] = FixturesElementsAll3['XGC_Weighted']*FixturesElementsAll3['expected_goal_involvements.gw']
+
+FixturesElementsAll3['DefenceOpp_pergame'] = FixturesElementsAll3['XGI_Weighted']*FixturesElementsAll3['expected_goals_conceded.gw']
+
+FixturesElementsAll3.to_csv('FixturesElementsAll.csv')
+
+FixturesElementsAll3['xGIAvg_Player'] = FixturesElementsAll3['expected_goal_involvements.gw'].apply(lambda x: format(x, ".2f")).astype(str) + '-' + FixturesElementsAll3['web_name']
+
+
+FixturesElementsAll2Att=FixturesElementsAll3[FixturesElementsAll3['element_type']==2]
+
+# Calculate total AttackOpp_pergame for each player
+FixturesElementsAll2Att = FixturesElementsAll2Att[FixturesElementsAll2Att['event']<UpcomingWeek+6]
+FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['DefenceOpp_pergame'].sum().reset_index()
+
+# Sort players by total AttackOpp_pergame and select top 20
+top_players = FixturesElementsAll2_totalsAtt.sort_values(by='DefenceOpp_pergame', ascending=True).head(NoPlayersShownInt)
+
+# Filter original DataFrame to include only top 20 players
+FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll3['web_name'].isin(top_players['web_name'])]
+
+
+# Pivot the DataFrame using pivot_table with an aggregation function
+heatmap_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='XGC_Weighted',
+    aggfunc='mean'
+)
+text_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='Teams.name',
+    aggfunc=lambda x: ' | '.join(x.astype(str))
+)
+current_team_data = FixturesElementsAll2AttFiltered.set_index('xGIAvg_Player')['InCurrentTeam'].to_dict()
+
+# Prepare custom tick labels for y-axis
+yaxis_tickvals = list(heatmap_data.index)
+yaxis_ticktext = [f'<b style="color:blue;">{player}</b>' if current_team_data[player] > 0 else player for player in yaxis_tickvals]
+
+# Create the heatmap
+fig2 = go.Figure(data=go.Heatmap(
+    z=heatmap_data.values,
+    x=heatmap_data.columns,
+    y=yaxis_tickvals,
+    text=text_data.values,
+    texttemplate="%{text}",
+    textfont={"size":8},
+    colorscale='reds'
+))
+
+# Update layout to leave more space for the y-axis
+fig2.update_layout(
+    margin=dict(l=200, r=50, t=50, b=50),  # Increase left margin to make room for y-axis labels
+    yaxis=dict(
+        tickvals=yaxis_tickvals,
+        ticktext=yaxis_ticktext
+    )
+)
+
+# Display the figure
+#fig.show()
+st.write("Defenders xGI")
+
+
+st.plotly_chart(fig2, use_container_width=True)

@@ -6,10 +6,16 @@ import pandas as pd
 import numpy as np
 from decimal import Decimal
 import itertools as it
+import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
-number = st.number_input("Enter Team ID", step=1)
+number = st.number_input("Enter Team ID", step=1, placeholder = 1769272)
 st.write("The current Team ID is ", number)
+
+#NoPlayersShown = st.number_input("Enter No. of Players to View", step=1,placeholder=10)
+#st.write("No. of Players Shown:", NoPlayersShown)
+
 
 ##Request fixtures from FPL API
 
@@ -31,11 +37,21 @@ PrevWeek = UpcomingWeek-1
 
 ### Variable for number of gameweeks to go back to calculate averages from
 
-NoWeeks = 4
+NoTrailingWeeks = 4
+
+NoForecastWeeks = 5
+
+#TeamID = TeamIDSel.astype(float)
 
 TeamID = number
 
-#TeamID = 1769272
+#NoPlayersShownInt = NoPlayersShown.astype(float)
+
+#NoPlayersShownInt = float(NoPlayersShown)
+
+# TeamID = 1769272
+
+NoPlayersShownInt = 20
 
 print(UpcomingWeek)
 print(PrevWeek)
@@ -171,10 +187,22 @@ TeamWeightings = {
     "Teams.id": [
         3, 7, 16, 20, 4, 9, 8, 2, 15, 19, 5, 14, 6, 12, 18, 1, 13, 10, 11, 17
     ],
-    "Teams.name": [
+    "Teams.name2": [
         "Bournemouth", "Crystal Palace", "Nott'm Forest", "Wolves", "Brentford", "Fulham",
         "Everton", "Aston Villa", "Newcastle", "West Ham", "Brighton", "Man Utd", "Chelsea",
         "Liverpool", "Spurs", "Arsenal", "Man City", "Ipswich", "Leicester", "Southampton"
+    ]
+    ,
+    "Teams.name": [
+        "Bour", "CryP", "For't", "Wolv", "Bfrd", "Ful",
+        "Ev", "Villa", "Newc", "WHam", "Bri", "ManU", "Chel",
+        "LPool", "Spurs", "Ars", "ManC", "Ips", "Leic", "Soton"
+    ]
+        ,
+    "Teams.name1": [
+        "b", "c", "F", "W", "B", "F",
+        "E", "V", "N", "W", "B", "M", "Ch",
+        "L", "S", "A", "M", "I", "L", "S"
     ]
 }
 
@@ -190,9 +218,9 @@ Elements_Dim2['XGI_Weighted'] = Elements_Dim2['expected_goal_involvements.gw'].a
 
 ###Filtered to only include the previous 4 weeks' data before it is grouped to return total sum for each team 
 
-Elements_Dim2Filtered = Elements_Dim2[Elements_Dim2['event']>PrevWeek-4]
+Elements_Dim2Filtered = Elements_Dim2[Elements_Dim2['event']>PrevWeek-NoTrailingWeeks]
 
-Elements_Dim2Grouped1 = Elements_Dim2Filtered.groupby(['OppTeam', 'event']).agg(
+Elements_Dim2Grouped1 = Elements_Dim2Filtered.groupby(['OppTeam','Teams.name', 'event']).agg(
     XGI_Weighted=('XGI_Weighted', 'sum'),
     XGC_Weighted=('XGC_Weighted', 'max'),
     Minutes=('minutes_x', 'sum')
@@ -201,7 +229,7 @@ Elements_Dim2Grouped1 = Elements_Dim2Filtered.groupby(['OppTeam', 'event']).agg(
 
 
 ##Average of the above taken for each team
-Elements_Dim2Grouped2 = Elements_Dim2Grouped1.groupby(['OppTeam']).agg(
+Elements_Dim2Grouped2 = Elements_Dim2Grouped1.groupby(['OppTeam','Teams.name']).agg(
     XGI_Weighted=('XGI_Weighted', 'mean'),
     XGC_Weighted=('XGC_Weighted', 'mean'),
     Minutes=('Minutes', 'mean')
@@ -211,10 +239,12 @@ Elements_Dim2Grouped2 = Elements_Dim2Grouped1.groupby(['OppTeam']).agg(
 
 Elements_Dim2Grouped2.head()
 
-##Previous 4 Gameweeks this dataframe is returning the averages for the selected players 
+Elements_Dim2Grouped2.to_csv('TeamProfiles.csv')
+
+##Previous 4 Gameweeks this dataframe is returning the averages for the selected players
 Elements_Dim1 = Elements_Dim1[Elements_Dim1['event']<UpcomingWeek]
 
-GWElementsDFLast4Weeks = Elements_Dim1[Elements_Dim1['event']>UpcomingWeek-NoWeeks-1]
+GWElementsDFLast4Weeks = Elements_Dim1[Elements_Dim1['event']>UpcomingWeek-NoTrailingWeeks-1]
 
 GWElementsDFLast4Weeks = GWElementsDFLast4Weeks[['minutes_x','playerid','web_name','element_type','team','now_cost','expected_goals.gw','expected_assists.gw','expected_goal_involvements.gw','expected_goals_conceded.gw']]
 
@@ -243,149 +273,361 @@ OpportunitiesCalc['DefenceOpp2'] = OpportunitiesCalc['XGI_Weighted']*Opportuniti
 
 OpportunitiesCalc.sort_values(by=['AttackOpp2'])
 
-##### Returns Output 1 FixturesElementsAll
-FixturesElementsAll1 = pd.merge(FixturesConcat, Elements_Dim2Grouped2,left_on='OppTeam2', right_on='OppTeam', how='outer')
-
-FixturesElementsAll2 = pd.merge(grouped_dfLast4Weeks, FixturesElementsAll1,left_on='team', right_on='TeamID', how='outer')
-
-FixturesElementsAll2['AttackOpp_pergame'] = FixturesElementsAll2['XGC_Weighted']*FixturesElementsAll2['expected_goal_involvements.gw']
-
-FixturesElementsAll2['DefenceOpp_pergame'] = FixturesElementsAll2['XGI_Weighted']*FixturesElementsAll2['expected_goals_conceded.gw']
-
-FixturesElementsAll2Att=FixturesElementsAll2[FixturesElementsAll2['element_type']>2]
-
-# Calculate total AttackOpp_pergame for each player
-FixturesElementsAll2Att = FixturesElementsAll2Att[FixturesElementsAll2Att['event']<UpcomingWeek+4]
-FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['AttackOpp_pergame'].sum().reset_index()
-
-# Sort players by total AttackOpp_pergame and select top 20
-top_players = FixturesElementsAll2_totalsAtt.sort_values(by='AttackOpp_pergame', ascending=False).head(10)
-
-# Filter original DataFrame to include only top 20 players
-FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll2Att['web_name'].isin(top_players['web_name'])]
-
-FixturesElementsAll2AttFilteredslim = FixturesElementsAll2AttFiltered[['web_name','event','AttackOpp_pergame']]
-FixturesElementsAll2AttFilteredslim['AttackOpp_pergame'].astype(float)
-FixturesElementsAll2AttFilteredslim.sort_values(by='event', ascending=True)
-
-FixturesElementsAll2AttFilteredslim=FixturesElementsAll2AttFilteredslim.drop_duplicates(subset=['event','web_name'])
-
-#figAttAtt = px.bar(data_frame=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
-
-st.write("Attackers Rating All")
-
-st.bar_chart(data=FixturesElementsAll2AttFilteredslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
-
-FixturesElementsAll2Def=FixturesElementsAll2[FixturesElementsAll2['element_type']<3]
-
-# Calculate total DefackOpp_pergame for each player
-FixturesElementsAll2Def = FixturesElementsAll2Def[FixturesElementsAll2Def['event']<UpcomingWeek+4]
-FixturesElementsAll2_totalsDef = FixturesElementsAll2Def.groupby('web_name')['DefenceOpp_pergame'].sum().reset_index()
-
-# Sort players by total DefackOpp_pergame and select top 20
-top_players = FixturesElementsAll2_totalsDef.sort_values(by='DefenceOpp_pergame', ascending=True).head(10)
-
-# Filter original DataFrame to include only top 20 players
-FixturesElementsAll2DefFiltered = FixturesElementsAll2Def[FixturesElementsAll2Def['web_name'].isin(top_players['web_name'])]
-
-FixturesElementsAll2DefFilteredslim = FixturesElementsAll2DefFiltered[['web_name','event','DefenceOpp_pergame']]
-FixturesElementsAll2DefFilteredslim['DefenceOpp_pergame'].astype(float)
-FixturesElementsAll2DefFilteredslim.sort_values(by='event', ascending=True)
-
-FixturesElementsAll2DefFilteredslim=FixturesElementsAll2DefFilteredslim.drop_duplicates(subset=['event','web_name'])
-
-#figDefDef = px.bar(data_frame=FixturesElementsAll2DefFilteredslim, x="event", y="DefenceOpp_pergame", barmode='group', color='web_name')
-
-st.write("Defenders Defensive Rating All - Lower is Better")
-
-st.bar_chart(data=FixturesElementsAll2DefFilteredslim, x="event", y="DefenceOpp_pergame",color="web_name", horizontal=False, stack=False)
-
-
-FixturesElementsAll2Def1=FixturesElementsAll2[FixturesElementsAll2['element_type']<3]
-
-# Calculate total Def1ackOpp_pergame for each player
-FixturesElementsAll2Def1 = FixturesElementsAll2Def1[FixturesElementsAll2Def1['event']<UpcomingWeek+4]
-FixturesElementsAll2_totalsDef1 = FixturesElementsAll2Def1.groupby('web_name')['AttackOpp_pergame'].sum().reset_index()
-
-# Sort players by total Def1ackOpp_pergame and select top 20
-top_players = FixturesElementsAll2_totalsDef1.sort_values(by='AttackOpp_pergame', ascending=False).head(10)
-
-# Filter original DataFrame to include only top 20 players
-FixturesElementsAll2Def1Filtered = FixturesElementsAll2Def1[FixturesElementsAll2Def1['web_name'].isin(top_players['web_name'])]
-
-FixturesElementsAll2Def1Filteredslim = FixturesElementsAll2Def1Filtered[['web_name','event','AttackOpp_pergame']]
-FixturesElementsAll2Def1Filteredslim['AttackOpp_pergame'].astype(float)
-FixturesElementsAll2Def1Filteredslim.sort_values(by='event', ascending=True)
-
-FixturesElementsAll2Def1Filteredslim=FixturesElementsAll2Def1Filteredslim.drop_duplicates(subset=['event','web_name'])
-
-#figDefAtt = px.bar(data_frame=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_pergame", barmode='group', color='web_name')
-
-st.write("Defenders Attacking Rating All")
-
-st.bar_chart(data=FixturesElementsAll2Def1Filteredslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
-
-
-###Current Team Stuff 
-
-CSurl = f"https://fantasy.premierleague.com/api/entry/{TeamID}/event/{PrevWeek}/picks/"
-CSurl
-response = requests.get(CSurl)
+url = f"https://fantasy.premierleague.com/api/entry/{TeamID}/event/{PrevWeek}/picks/"
+response = requests.get(url)
 json_data = response.json()
 
 TeamSelection = json_data['picks']
 
 TeamSelection = pd.json_normalize(TeamSelection)
 
-TeamSelection.head()
+TeamSelection1 = TeamSelection[['element','is_captain']]
 
-#st.plotly_chart(figDefAtt, use_container_width=True)
+TeamSelection1.head()
 
-# Calculate total AttackOpp_pergame for each player
-FixturesElementsAll3 = FixturesElementsAll2[FixturesElementsAll2['event']<UpcomingWeek+4]
+######### DataframeFiltering
 
-FixturesElementsAll3 = pd.merge(FixturesElementsAll3, TeamSelection,left_on='playerid', right_on='element', how='outer')
 
-FixturesElementsAll3['IsInCurrentTeam'] = np.where(
-    FixturesElementsAll3['is_captain'].notnull(),
-    'Y',
-    'N'
+
+######### Midfielders
+
+##### Returns Output 1 FixturesElementsAll
+FixturesElementsAll1 = pd.merge(FixturesConcat, Elements_Dim2Grouped2,left_on='OppTeam2', right_on='OppTeam', how='outer')
+
+FixturesElementsAll2 = pd.merge(grouped_dfLast4Weeks, FixturesElementsAll1,left_on='team', right_on='TeamID', how='outer')
+
+FixturesElementsAll3 =  pd.merge(TeamSelection1, FixturesElementsAll2,left_on='element', right_on='playerid', how='outer')
+
+FixturesElementsAll3['InCurrentTeam']= np.where(
+    FixturesElementsAll3['element'].notnull(),
+    1,
+    0
 )
 
-FixturesElementsAll3FilteredAtt=FixturesElementsAll3[FixturesElementsAll3['IsInCurrentTeam']=='Y']
+FixturesElementsAll3['AttackOpp_pergame'] = FixturesElementsAll3['XGC_Weighted']*FixturesElementsAll3['expected_goal_involvements.gw']
 
-FixturesElementsAll3FilteredAtt=FixturesElementsAll3FilteredAtt[FixturesElementsAll3FilteredAtt['element_type_x']>2]
+FixturesElementsAll3['DefenceOpp_pergame'] = FixturesElementsAll3['XGI_Weighted']*FixturesElementsAll3['expected_goals_conceded.gw']
 
-FixturesElementsAll3FilteredAttslim = FixturesElementsAll3FilteredAtt[['web_name','event','AttackOpp_pergame']]
-#FixturesElementsAll3Filteredslim['event'].astype(int)
-FixturesElementsAll3FilteredAttslim['AttackOpp_pergame'].astype(float)
-FixturesElementsAll3FilteredAttslim.sort_values(by='event', ascending=True)
+FixturesElementsAll3.to_csv('FixturesElementsAll.csv')
 
-FixturesElementsAll3FilteredAttslim=FixturesElementsAll3FilteredAttslim.drop_duplicates(subset=['event','web_name'])
+FixturesElementsAll3['xGIAvg_Player'] = FixturesElementsAll3['expected_goal_involvements.gw'].apply(lambda x: format(x, ".2f")).astype(str) + '-' + FixturesElementsAll3['web_name']
 
 
-st.bar_chart(data=FixturesElementsAll3FilteredAttslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
+FixturesElementsAll2Att=FixturesElementsAll3[FixturesElementsAll3['element_type']==3]
 
-##Current Team Defence
+# Calculate total AttackOpp_pergame for each player
+FixturesElementsAll2Att = FixturesElementsAll2Att[FixturesElementsAll2Att['event']<UpcomingWeek+6]
+FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['AttackOpp_pergame'].sum().reset_index()
 
-FixturesElementsAll3FilteredDef=FixturesElementsAll3[FixturesElementsAll3['IsInCurrentTeam']=='Y']
+# Sort players by total AttackOpp_pergame and select top 20
+top_players = FixturesElementsAll2_totalsAtt.sort_values(by='AttackOpp_pergame', ascending=False).head(NoPlayersShownInt)
 
-FixturesElementsAll3FilteredDef=FixturesElementsAll3FilteredDef[FixturesElementsAll3FilteredDef['element_type_x']<3]
-
-FixturesElementsAll3FilteredDefslim = FixturesElementsAll3FilteredDef[['web_name','event','AttackOpp_pergame','DefenceOpp_pergame']]
-#FixturesElementsAll3Filteredslim['event'].astype(int)
-FixturesElementsAll3FilteredDefslim['DefenceOpp_pergame'].astype(float)
-FixturesElementsAll3FilteredDefslim['AttackOpp_pergame'].astype(float)
-FixturesElementsAll3FilteredDefslim.sort_values(by='event', ascending=True)
-
-FixturesElementsAll3FilteredDefslim=FixturesElementsAll3FilteredDefslim.drop_duplicates(subset=['event','web_name'])
-
-st.write("Current Team Defence Defensive Rating - Lower is Better")
-
-st.bar_chart(data=FixturesElementsAll3FilteredDefslim, x="event", y="DefenceOpp_pergame",color="web_name", horizontal=False, stack=False)
-
-st.write("Current Team Defence Attacking Rating")
-
-st.bar_chart(data=FixturesElementsAll3FilteredDefslim, x="event", y="AttackOpp_pergame",color="web_name", horizontal=False, stack=False)
+# Filter original DataFrame to include only top 20 players
+FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll3['web_name'].isin(top_players['web_name'])]
 
 
+# Pivot the DataFrame using pivot_table with an aggregation function
+heatmap_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='XGC_Weighted',
+    aggfunc='mean'
+)
+text_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='Teams.name',
+    aggfunc=lambda x: ' | '.join(x.astype(str))
+)
+current_team_data = FixturesElementsAll2AttFiltered.set_index('xGIAvg_Player')['InCurrentTeam'].to_dict()
+
+# Prepare custom tick labels for y-axis
+yaxis_tickvals = list(heatmap_data.index)
+yaxis_ticktext = [f'<b style="color:blue;">{player}</b>' if current_team_data[player] > 0 else player for player in yaxis_tickvals]
+
+# Create the heatmap
+fig = go.Figure(data=go.Heatmap(
+    z=heatmap_data.values,
+    x=heatmap_data.columns,
+    y=yaxis_tickvals,
+    text=text_data.values,
+    texttemplate="%{text}",
+    textfont={"size":8},
+    colorscale='reds'
+))
+
+# Update layout to leave more space for the y-axis
+fig.update_layout(
+    margin=dict(l=200, r=50, t=50, b=50),  # Increase left margin to make room for y-axis labels
+    yaxis=dict(
+        tickvals=yaxis_tickvals,
+        ticktext=yaxis_ticktext
+    )
+)
+
+# Display the figure
+#fig.show()
+st.write("Midfielders  xGI")
+
+
+st.plotly_chart(fig, use_container_width=True)
+
+
+
+#############Attackers
+
+
+
+##### Returns Output 1 FixturesElementsAll
+FixturesElementsAll1 = pd.merge(FixturesConcat, Elements_Dim2Grouped2,left_on='OppTeam2', right_on='OppTeam', how='outer')
+
+FixturesElementsAll2 = pd.merge(grouped_dfLast4Weeks, FixturesElementsAll1,left_on='team', right_on='TeamID', how='outer')
+
+FixturesElementsAll3 =  pd.merge(TeamSelection1, FixturesElementsAll2,left_on='element', right_on='playerid', how='outer')
+
+FixturesElementsAll3['InCurrentTeam']= np.where(
+    FixturesElementsAll3['element'].notnull(),
+    1,
+    0
+)
+
+FixturesElementsAll3['AttackOpp_pergame'] = FixturesElementsAll3['XGC_Weighted']*FixturesElementsAll3['expected_goal_involvements.gw']
+
+FixturesElementsAll3['DefenceOpp_pergame'] = FixturesElementsAll3['XGI_Weighted']*FixturesElementsAll3['expected_goals_conceded.gw']
+
+FixturesElementsAll3.to_csv('FixturesElementsAll.csv')
+
+FixturesElementsAll3['xGIAvg_Player'] = FixturesElementsAll3['expected_goal_involvements.gw'].apply(lambda x: format(x, ".2f")).astype(str) + '-' + FixturesElementsAll3['web_name']
+
+
+FixturesElementsAll2Att=FixturesElementsAll3[FixturesElementsAll3['element_type']==4]
+
+# Calculate total AttackOpp_pergame for each player
+FixturesElementsAll2Att = FixturesElementsAll2Att[FixturesElementsAll2Att['event']<UpcomingWeek+6]
+FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['AttackOpp_pergame'].sum().reset_index()
+
+# Sort players by total AttackOpp_pergame and select top 20
+top_players = FixturesElementsAll2_totalsAtt.sort_values(by='AttackOpp_pergame', ascending=False).head(NoPlayersShownInt)
+
+# Filter original DataFrame to include only top 20 players
+FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll3['web_name'].isin(top_players['web_name'])]
+
+
+# Pivot the DataFrame using pivot_table with an aggregation function
+heatmap_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='XGC_Weighted',
+    aggfunc='mean'
+)
+text_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='Teams.name',
+    aggfunc=lambda x: ' | '.join(x.astype(str))
+)
+current_team_data = FixturesElementsAll2AttFiltered.set_index('xGIAvg_Player')['InCurrentTeam'].to_dict()
+
+# Prepare custom tick labels for y-axis
+yaxis_tickvals = list(heatmap_data.index)
+yaxis_ticktext = [f'<b style="color:blue;">{player}</b>' if current_team_data[player] > 0 else player for player in yaxis_tickvals]
+
+# Create the heatmap
+fig1 = go.Figure(data=go.Heatmap(
+    z=heatmap_data.values,
+    x=heatmap_data.columns,
+    y=yaxis_tickvals,
+    text=text_data.values,
+    texttemplate="%{text}",
+    textfont={"size":8},
+    colorscale='reds'
+))
+
+# Update layout to leave more space for the y-axis
+fig1.update_layout(
+    margin=dict(l=200, r=50, t=50, b=50),  # Increase left margin to make room for y-axis labels
+    yaxis=dict(
+        tickvals=yaxis_tickvals,
+        ticktext=yaxis_ticktext
+    )
+)
+
+# Display the figure
+#fig.show()
+st.write("Attackers xGI")
+
+
+st.plotly_chart(fig1, use_container_width=True)
+
+
+
+############# Defenders
+
+
+
+##### Returns Output 1 FixturesElementsAll
+FixturesElementsAll1 = pd.merge(FixturesConcat, Elements_Dim2Grouped2,left_on='OppTeam2', right_on='OppTeam', how='outer')
+
+FixturesElementsAll2 = pd.merge(grouped_dfLast4Weeks, FixturesElementsAll1,left_on='team', right_on='TeamID', how='outer')
+
+FixturesElementsAll3 =  pd.merge(TeamSelection1, FixturesElementsAll2,left_on='element', right_on='playerid', how='outer')
+
+FixturesElementsAll3['InCurrentTeam']= np.where(
+    FixturesElementsAll3['element'].notnull(),
+    1,
+    0
+)
+
+FixturesElementsAll3['AttackOpp_pergame'] = FixturesElementsAll3['XGC_Weighted']*FixturesElementsAll3['expected_goal_involvements.gw']
+
+FixturesElementsAll3['DefenceOpp_pergame'] = FixturesElementsAll3['XGI_Weighted']*FixturesElementsAll3['expected_goals_conceded.gw']
+
+FixturesElementsAll3.to_csv('FixturesElementsAll.csv')
+
+FixturesElementsAll3['xGIAvg_Player'] = FixturesElementsAll3['expected_goal_involvements.gw'].apply(lambda x: format(x, ".2f")).astype(str) + '-' + FixturesElementsAll3['web_name']
+
+
+FixturesElementsAll2Att=FixturesElementsAll3[FixturesElementsAll3['element_type']==2]
+
+# Calculate total AttackOpp_pergame for each player
+FixturesElementsAll2Att = FixturesElementsAll2Att[FixturesElementsAll2Att['event']<UpcomingWeek+6]
+FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['AttackOpp_pergame'].sum().reset_index()
+
+# Sort players by total AttackOpp_pergame and select top 20
+top_players = FixturesElementsAll2_totalsAtt.sort_values(by='AttackOpp_pergame', ascending=False).head(NoPlayersShownInt)
+
+# Filter original DataFrame to include only top 20 players
+FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll3['web_name'].isin(top_players['web_name'])]
+
+
+# Pivot the DataFrame using pivot_table with an aggregation function
+heatmap_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='XGC_Weighted',
+    aggfunc='mean'
+)
+text_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='Teams.name',
+    aggfunc=lambda x: ' | '.join(x.astype(str))
+)
+current_team_data = FixturesElementsAll2AttFiltered.set_index('xGIAvg_Player')['InCurrentTeam'].to_dict()
+
+# Prepare custom tick labels for y-axis
+yaxis_tickvals = list(heatmap_data.index)
+yaxis_ticktext = [f'<b style="color:blue;">{player}</b>' if current_team_data[player] > 0 else player for player in yaxis_tickvals]
+
+# Create the heatmap
+fig2 = go.Figure(data=go.Heatmap(
+    z=heatmap_data.values,
+    x=heatmap_data.columns,
+    y=yaxis_tickvals,
+    text=text_data.values,
+    texttemplate="%{text}",
+    textfont={"size":8},
+    colorscale='reds'
+))
+
+# Update layout to leave more space for the y-axis
+fig2.update_layout(
+    margin=dict(l=200, r=50, t=50, b=50),  # Increase left margin to make room for y-axis labels
+    yaxis=dict(
+        tickvals=yaxis_tickvals,
+        ticktext=yaxis_ticktext
+    )
+)
+
+# Display the figure
+#fig.show()
+st.write("Defenders xGI")
+
+
+st.plotly_chart(fig2, use_container_width=True)
+
+
+############# Defenders xGC
+
+
+
+##### Returns Output 1 FixturesElementsAll
+FixturesElementsAll1 = pd.merge(FixturesConcat, Elements_Dim2Grouped2,left_on='OppTeam2', right_on='OppTeam', how='outer')
+
+FixturesElementsAll2 = pd.merge(grouped_dfLast4Weeks, FixturesElementsAll1,left_on='team', right_on='TeamID', how='outer')
+
+FixturesElementsAll3 =  pd.merge(TeamSelection1, FixturesElementsAll2,left_on='element', right_on='playerid', how='outer')
+
+FixturesElementsAll3['InCurrentTeam']= np.where(
+    FixturesElementsAll3['element'].notnull(),
+    1,
+    0
+)
+
+FixturesElementsAll3['AttackOpp_pergame'] = FixturesElementsAll3['XGC_Weighted']*FixturesElementsAll3['expected_goal_involvements.gw']
+
+FixturesElementsAll3['DefenceOpp_pergame'] = FixturesElementsAll3['XGI_Weighted']*FixturesElementsAll3['expected_goals_conceded.gw']
+
+FixturesElementsAll3.to_csv('FixturesElementsAll.csv')
+
+FixturesElementsAll3['xGIAvg_Player'] = FixturesElementsAll3['expected_goal_involvements.gw'].apply(lambda x: format(x, ".2f")).astype(str) + '-' + FixturesElementsAll3['web_name']
+
+
+FixturesElementsAll2Att=FixturesElementsAll3[FixturesElementsAll3['element_type']==2]
+
+# Calculate total AttackOpp_pergame for each player
+FixturesElementsAll2Att = FixturesElementsAll2Att[FixturesElementsAll2Att['event']<UpcomingWeek+6]
+FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['DefenceOpp_pergame'].sum().reset_index()
+
+# Sort players by total AttackOpp_pergame and select top 20
+top_players = FixturesElementsAll2_totalsAtt.sort_values(by='DefenceOpp_pergame', ascending=True).head(NoPlayersShownInt)
+
+# Filter original DataFrame to include only top 20 players
+FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll3['web_name'].isin(top_players['web_name'])]
+
+
+# Pivot the DataFrame using pivot_table with an aggregation function
+heatmap_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='XGC_Weighted',
+    aggfunc='mean'
+)
+text_data = FixturesElementsAll2AttFiltered.pivot_table(
+    index='xGIAvg_Player',
+    columns='event',
+    values='Teams.name',
+    aggfunc=lambda x: ' | '.join(x.astype(str))
+)
+current_team_data = FixturesElementsAll2AttFiltered.set_index('xGIAvg_Player')['InCurrentTeam'].to_dict()
+
+# Prepare custom tick labels for y-axis
+yaxis_tickvals = list(heatmap_data.index)
+yaxis_ticktext = [f'<b style="color:blue;">{player}</b>' if current_team_data[player] > 0 else player for player in yaxis_tickvals]
+
+# Create the heatmap
+fig2 = go.Figure(data=go.Heatmap(
+    z=heatmap_data.values,
+    x=heatmap_data.columns,
+    y=yaxis_tickvals,
+    text=text_data.values,
+    texttemplate="%{text}",
+    textfont={"size":8},
+    colorscale='reds'
+))
+
+# Update layout to leave more space for the y-axis
+fig2.update_layout(
+    margin=dict(l=200, r=50, t=50, b=50),  # Increase left margin to make room for y-axis labels
+    yaxis=dict(
+        tickvals=yaxis_tickvals,
+        ticktext=yaxis_ticktext
+    )
+)
+
+# Display the figure
+#fig.show()
+st.write("Defenders xGI")
+
+
+st.plotly_chart(fig2, use_container_width=True)
