@@ -542,7 +542,7 @@ st.write("Defenders xGC")
 st.plotly_chart(fig2, use_container_width=True)
 
 
-############# Defenders xGC
+############# Defenders xGI
 
 
 
@@ -570,10 +570,10 @@ FixturesElementsAll2Att=FixturesElementsAll3[FixturesElementsAll3['element_type'
 
 # Calculate total AttackOpp_pergame for each player
 FixturesElementsAll2Att = FixturesElementsAll2Att[FixturesElementsAll2Att['event']<UpcomingWeek+6]
-FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['DefenceOpp_pergame'].sum().reset_index()
+FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['AttackOpp_pergame'].sum().reset_index()
 
 # Sort players by total AttackOpp_pergame and select top 20
-top_players = FixturesElementsAll2_totalsAtt.sort_values(by='DefenceOpp_pergame', ascending=False).head(NoPlayersShownInt)
+top_players = FixturesElementsAll2_totalsAtt.sort_values(by='AttackOpp_pergame', ascending=False).head(NoPlayersShownInt)
 
 # Filter original DataFrame to include only top 20 players
 FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll3['web_name'].isin(top_players['web_name'])]
