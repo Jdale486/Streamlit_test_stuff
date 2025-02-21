@@ -575,7 +575,7 @@ FixturesElementsAll2_totalsAtt = FixturesElementsAll2Att.groupby('web_name')['At
 # Sort players by total AttackOpp_pergame and select top 20
 top_players = FixturesElementsAll2_totalsAtt.sort_values(by='AttackOpp_pergame', ascending=False).head(NoPlayersShownInt)
 
-# Filter original DataFrame to include only top 20 players
+# Filter original DataFrame to include only top 20 players 
 FixturesElementsAll2AttFiltered = FixturesElementsAll2Att[FixturesElementsAll3['web_name'].isin(top_players['web_name'])]
 
 
